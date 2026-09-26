@@ -26,6 +26,15 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 - **Flap_Velocity**: The fixed upward (negative) vertical velocity the Ghost is set to when a Flap is applied.
 - **Terminal_Velocity**: The maximum downward vertical speed the Ghost can reach; the Ghost's downward velocity is capped at this value.
 - **Delta_Time**: The elapsed time in seconds since the previous frame update, used to make motion frame-rate-independent.
+- **Base_Pipe_Speed**: The initial horizontal scroll speed of Pipe_Pairs at the start of a game session, before any difficulty progression is applied.
+- **Pipe_Speed**: The current horizontal scroll speed of Pipe_Pairs, which starts at Base_Pipe_Speed and increases with Score up to Max_Pipe_Speed.
+- **Max_Pipe_Speed**: The maximum horizontal scroll speed Pipe_Pairs can reach; Pipe_Speed is capped at this value.
+- **Speed_Step**: The fixed increment added to Pipe_Speed each time the Score crosses a difficulty threshold.
+- **Game_Config**: The single source of gameplay tuning values (physics constants, pipe speeds and difficulty parameters, gap and spacing, cloud parameters, Ghost dimensions, display sizes), each with a documented allowed range.
+- **Config_Validator**: The component that checks Game_Config values against their allowed ranges when the Game loads.
+- **Tuning_Panel**: A developer-only on-screen overlay for viewing and changing Game_Config values while the Game runs.
+- **Developer**: The person tuning or building the Game.
+- **Cloud_Speed_Ratio**: A Game_Config value for each Cloud_Layer giving that layer's horizontal speed as a fraction of the current Pipe_Speed.
 
 ## Requirements
 
@@ -96,7 +105,7 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 
 #### Acceptance Criteria
 
-1. WHILE the Game_State is Playing, THE Game SHALL move each Pipe_Pair horizontally toward the Ghost at a fixed constant speed that is identical for every Pipe_Pair on each frame update.
+1. WHILE the Game_State is Playing, THE Game SHALL move each Pipe_Pair horizontally toward the Ghost at the current Pipe_Speed, where the Pipe_Speed applied on any single frame update is identical for every Pipe_Pair, and where the shared Pipe_Speed MAY change over time only as specified in Requirement 15 (Difficulty Progression).
 2. WHILE the Game_State is Playing, THE Game SHALL generate a new Pipe_Pair at a fixed horizontal spacing interval so that Pipe_Pairs appear continuously.
 3. THE Game SHALL render each Pipe_Pair as a green top pipe and a green bottom pipe separated by a Gap.
 4. WHILE the Game_State is Playing, THE Game SHALL assign each new Pipe_Pair a Gap of fixed vertical size, with the Gap vertical position selected within bounds that keep the entire Gap inside the play area.
@@ -171,7 +180,7 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 5. WHILE the game is running, THE Game SHALL maintain a rendering frame rate of at least 30 frames per second.
 6. WHILE the game is running, THE Game SHALL render each white cloud as semi-transparent, with an opacity between 0.3 and 0.8.
 7. WHILE the Game_State is Playing, THE Game SHALL move clouds horizontally, assigning clouds to at least two distinct depth layers where each layer moves at a different constant horizontal speed to create a parallax perspective effect.
-8. WHILE the Game_State is Playing, THE Game SHALL move every cloud layer at a slower horizontal speed than the Pipe_Pair scroll speed, so that clouds appear farther in the background than the pipes.
+8. WHILE the Game_State is Playing, THE Game SHALL move every Cloud_Layer at a horizontal speed strictly less than the current Pipe_Speed, so that clouds appear farther in the background than the pipes even after the Pipe_Speed increases through difficulty progression.
 
 ### Requirement 13: Audio Feedback
 
@@ -197,3 +206,48 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 4. WHILE the Game_State is Playing AND no Flap is applied on a frame update, THE Game SHALL carry the Ghost vertical velocity over from the previous frame update, modifying the velocity only by the Gravity_Constant and the Terminal_Velocity cap.
 5. WHILE the Game_State is Playing, THE Game SHALL scale each Ghost vertical velocity update by the Delta_Time, applying the Gravity_Constant as Gravity_Constant multiplied by Delta_Time.
 6. WHILE the Game_State is Playing, THE Game SHALL scale each Ghost vertical position update by the Delta_Time, changing the position by the current Ghost vertical velocity multiplied by Delta_Time, so that motion is consistent regardless of frame rate.
+
+### Requirement 15: Difficulty Progression
+
+**User Story:** As a player, I want the game to get gradually harder as my score climbs, so that longer runs stay challenging and interesting.
+
+#### Acceptance Criteria
+
+1. WHEN the Game_State transitions to Playing, THE Game SHALL set the Pipe_Speed to the Base_Pipe_Speed.
+2. WHILE the Game_State is Playing, WHEN the Score crosses a fixed threshold interval of every 5 points, THE Game SHALL increase the Pipe_Speed by the Speed_Step.
+3. WHILE the Game_State is Playing, IF increasing the Pipe_Speed by the Speed_Step would exceed the Max_Pipe_Speed, THEN THE Game SHALL set the Pipe_Speed to the Max_Pipe_Speed.
+4. WHILE the Pipe_Speed equals the Max_Pipe_Speed, WHEN the Score crosses a further threshold interval, THE Game SHALL leave the Pipe_Speed unchanged at the Max_Pipe_Speed.
+5. WHEN the Game increases the Pipe_Speed, THE Game SHALL apply the increased Pipe_Speed to all active Pipe_Pairs and all future Pipe_Pairs, so that every Pipe_Pair continues to share a single common Pipe_Speed consistent with Requirement 6.1.
+6. WHILE the Game_State is Playing, THE Game SHALL keep every Cloud_Layer horizontal speed strictly less than the current Pipe_Speed after each Pipe_Speed increase, so that the parallax relationship in Requirement 12.8 is preserved.
+7. WHEN the Game increases the Pipe_Speed, THE Game SHALL leave the Gap vertical size unchanged, so that difficulty progression alters the Pipe_Speed only and does not change the fixed Gap size defined in Requirement 6.4.
+
+### Requirement 16: Configuration Validation
+
+**User Story:** As a Developer, I want tuning values checked against their allowed ranges when the game loads, so that a tuning change cannot silently break the game's rules.
+
+#### Acceptance Criteria
+
+1. WHEN the Game finishes loading, THE Config_Validator SHALL check every Game_Config value against the allowed range documented for that value.
+2. IF a Game_Config value is outside its allowed range, THEN THE Config_Validator SHALL log a console warning naming the Game_Config value, its current setting, and its allowed range.
+3. IF a Game_Config value is outside its allowed range, THEN THE Game SHALL continue loading and set the Game_State to Main_Menu as specified in Requirement 1.1, so that Config_Validator warnings are non-blocking.
+4. IF the Max_Pipe_Speed is less than the Base_Pipe_Speed, THEN THE Config_Validator SHALL log a console warning naming both Game_Config values and their current settings.
+5. IF any Cloud_Speed_Ratio is less than or equal to 0 or greater than or equal to 1, THEN THE Config_Validator SHALL log a console warning naming the affected Cloud_Layer and its Cloud_Speed_Ratio, since that Cloud_Speed_Ratio would violate the parallax relationship in Requirements 12.8 and 15.6.
+6. WHEN every Game_Config value is within its allowed range, THE Config_Validator SHALL log zero warnings.
+7. THE Game_Config SHALL define default values for Gravity_Constant, Flap_Velocity, Terminal_Velocity, and the difficulty threshold interval equal to the values specified in Requirements 14.1, 14.2, 14.3, and 15.2 respectively.
+
+### Requirement 17: Developer Tuning Panel
+
+**User Story:** As a Developer, I want to adjust gameplay parameters live while playing, so that I can tune the game's feel without editing code and reloading.
+
+#### Acceptance Criteria
+
+1. WHEN the page URL contains the query parameter debug=1, THE Game SHALL enable the Tuning_Panel.
+2. WHILE the Tuning_Panel is not enabled, THE Game SHALL NOT display the Tuning_Panel or respond to the Tuning_Panel toggle key.
+3. WHILE the Tuning_Panel is enabled, WHEN the Developer presses the "D" key, THE Game SHALL toggle Tuning_Panel visibility.
+4. WHILE the Tuning_Panel is visible, THE Tuning_Panel SHALL display editable controls for at least the Gravity_Constant, Flap_Velocity, Terminal_Velocity, Base_Pipe_Speed, Max_Pipe_Speed, Speed_Step, difficulty threshold interval, Gap vertical size, and Pipe_Pair spawn spacing.
+5. WHEN the Developer changes a value in the Tuning_Panel, THE Game SHALL apply the new Game_Config value on the next frame update without reloading the page and without resetting the current game session.
+6. WHEN the Developer changes a value in the Tuning_Panel, THE Game SHALL constrain the new Game_Config value to the allowed range documented for that value.
+7. WHEN the Developer activates the Tuning_Panel copy control, THE Game SHALL copy the current Game_Config values to the clipboard in a format that can be pasted directly into the Game_Config source.
+8. WHEN the page is reloaded, THE Game SHALL use the Game_Config values from the Game_Config source and discard all Tuning_Panel changes, so that tuning overrides are not persisted.
+9. WHILE the Tuning_Panel is visible, WHEN the Developer interacts with a Tuning_Panel control, THE Game SHALL NOT treat the Tuning_Panel interaction as a flap input.
+10. WHILE the Tuning_Panel is enabled, WHEN the Developer changes a value in the Tuning_Panel, THE Game SHALL use the changed Game_Config value in place of the corresponding default value from Requirements 3.4, 6.2, 6.4, 14.1, 14.2, 14.3, and 15.2 for the remainder of the current page session.
