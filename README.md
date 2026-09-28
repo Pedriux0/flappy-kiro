@@ -4,7 +4,7 @@ A Flappy Bird–style browser game starring Kiro's ghost, built with vanilla Jav
 
 ## About this project
 
-I built this project with [Kiro](https://kiro.dev) during the **AWS Student Community Day**. I started from the base game and then used Kiro's spec-driven workflow (requirements → design → tasks) to add upgrades — some that I found in the community and some of my own ideas.
+I built this project with [Kiro](https://kiro.dev) and playabe in (https://pedriux0.github.io/flappy-kiro/) during the **AWS Student Community Day**. I started from the base game and then used Kiro's spec-driven workflow (requirements → design → tasks) to add upgrades — some that I found in the community and some of my own ideas.
 
 The full specs live in [`.kiro/specs/flappy-kiro/`](.kiro/specs/flappy-kiro/):
 - `requirements.md` — what the game must do
