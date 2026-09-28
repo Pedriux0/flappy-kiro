@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Kiro</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!--
+    Flappy Kiro uses native ES modules, which browsers block when the page is
+    opened directly via file://. Serve the workspace root over a local static
+    server instead, for example:
+      python3 -m http.server   (then open http://localhost:8000)
+      npx serve .
+  -->
+  <main id="game-container" class="game-container">
+    <!-- 480×640 logical canvas; CSS scales it with pixelated rendering. -->
+    <canvas id="game" width="480" height="640" aria-label="Flappy Kiro game">
+      Your browser does not support the HTML5 canvas element.
+    </canvas>
+  </main>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

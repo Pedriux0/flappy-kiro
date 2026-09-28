@@ -30,11 +30,14 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 - **Pipe_Speed**: The current horizontal scroll speed of Pipe_Pairs, which starts at Base_Pipe_Speed and increases with Score up to Max_Pipe_Speed.
 - **Max_Pipe_Speed**: The maximum horizontal scroll speed Pipe_Pairs can reach; Pipe_Speed is capped at this value.
 - **Speed_Step**: The fixed increment added to Pipe_Speed each time the Score crosses a difficulty threshold.
-- **Game_Config**: The single source of gameplay tuning values (physics constants, pipe speeds and difficulty parameters, gap and spacing, cloud parameters, Ghost dimensions, display sizes), each with a documented allowed range.
+- **Game_Config**: The single source of gameplay tuning values (physics constants, pipe speeds and difficulty parameters, gap and spacing, cloud parameters, Ghost dimensions, Hitbox radius, display sizes), each with a documented allowed range.
 - **Config_Validator**: The component that checks Game_Config values against their allowed ranges when the Game loads.
 - **Tuning_Panel**: A developer-only on-screen overlay for viewing and changing Game_Config values while the Game runs.
 - **Developer**: The person tuning or building the Game.
 - **Cloud_Speed_Ratio**: A Game_Config value for each Cloud_Layer giving that layer's horizontal speed as a fraction of the current Pipe_Speed.
+- **Best_Score_Panel**: An overlay shown over the Main_Menu that displays the High_Score and a back control. The Best_Score_Panel is part of the Main_Menu Game_State, not a separate Game_State.
+- **Hitbox**: The circular collision region of the Ghost, centred on the Ghost center.
+- **Ghost_Animation**: The visual-only animation state of the Ghost (Idle, Flap, Glide, Death). The Ghost_Animation never changes the Ghost position, velocity, or Hitbox.
 
 ## Requirements
 
@@ -59,7 +62,7 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 
 #### Acceptance Criteria
 
-1. WHILE the Game_State is Main_Menu, WHEN the Player performs a mouse click, a screen tap, or presses the Spacebar key, THE Game SHALL set the Game_State to Playing.
+1. WHILE the Game_State is Main_Menu AND the Best_Score_Panel is closed, WHEN the Player performs a mouse click or a screen tap outside the High Scores control, or presses the Spacebar or Enter key, THE Game SHALL set the Game_State to Playing, subject to the exceptions in Requirements 18.5 and 18.6.
 2. WHEN the Game_State transitions to Playing, THE Game SHALL reset the Score to 0.
 3. WHEN the Game_State transitions to Playing, THE Game SHALL apply the first Flap to the Ghost using the same fixed upward velocity as any Flap.
 
@@ -127,9 +130,9 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 
 #### Acceptance Criteria
 
-1. WHILE the Game_State is Playing, WHEN the Ghost bounding region intersects the bounding region of any pipe of a Pipe_Pair on a frame update, THE Game SHALL set the Game_State to Game_Over.
-2. WHILE the Game_State is Playing, WHEN the Ghost bounding region intersects the Ground on a frame update, THE Game SHALL set the Game_State to Game_Over.
-3. WHILE the Game_State is Playing, WHEN the Ghost bounding region intersects the Ceiling on a frame update, THE Game SHALL set the Game_State to Game_Over.
+1. WHILE the Game_State is Playing, WHEN the Ghost Hitbox intersects the bounding region of any pipe of a Pipe_Pair on a frame update, as defined in Requirement 19.5, THE Game SHALL set the Game_State to Game_Over.
+2. WHILE the Game_State is Playing, WHEN the Ghost Hitbox intersects the Ground on a frame update, as defined in Requirement 19.6, THE Game SHALL set the Game_State to Game_Over.
+3. WHILE the Game_State is Playing, WHEN the Ghost Hitbox intersects the Ceiling on a frame update, as defined in Requirement 19.6, THE Game SHALL set the Game_State to Game_Over.
 4. WHEN the Game_State transitions to Game_Over, THE Game SHALL stop applying horizontal movement to all Pipe_Pairs.
 5. WHEN the Game_State transitions to Game_Over, THE Game SHALL stop updating the Ghost vertical position.
 
@@ -152,7 +155,7 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 #### Acceptance Criteria
 
 1. WHEN the Game_State transitions to Game_Over, THE Game SHALL display a game over screen showing the final Score, the current High_Score, and a restart prompt.
-2. WHILE the Game_State is Game_Over, WHEN the Player provides a flap input (mouse click, screen tap, or Spacebar key) or activates the restart option, THE Game SHALL set the Game_State to Main_Menu.
+2. WHILE the Game_State is Game_Over, WHEN the Player performs a mouse click or a screen tap, presses the Spacebar or Enter key, or activates the restart option, THE Game SHALL set the Game_State to Main_Menu.
 3. WHEN the Game_State transitions to Main_Menu from Game_Over, THE Game SHALL reset the Ghost to the starting position and set the Ghost vertical velocity to zero.
 4. WHEN the Game_State transitions to Main_Menu from Game_Over, THE Game SHALL remove all active Pipe_Pairs.
 5. WHEN the Game_State transitions to Main_Menu from Game_Over, THE Game SHALL set the Score to 0 and update the Score_Display to show a Score of 0 and the current High_Score.
@@ -173,7 +176,7 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 
 #### Acceptance Criteria
 
-1. WHILE the game is running, THE Game SHALL render the Ghost as a white pixel-styled character measuring between 24 and 48 pixels in both width and height.
+1. WHILE the game is running, THE Game SHALL render the Ghost as a white pixel-styled character measuring between 24 and 48 pixels in both width and height, with a default Ghost sprite size of 32 by 32 pixels as specified in Requirement 19.
 2. WHILE the game is running, THE Game SHALL render each Pipe_Pair with green pixel-styled pipes, each pipe having a width between 40 and 80 pixels.
 3. WHILE the game is running, THE Game SHALL render the background as a light blue sky containing between 1 and 10 white clouds.
 4. WHILE the Score_Display is visible, THE Game SHALL render the Score_Display text using a pixel-styled font at a size between 16 and 48 pixels.
@@ -251,3 +254,59 @@ Flappy Kiro is a retro, pixel-styled endless scroller game that runs in a web br
 8. WHEN the page is reloaded, THE Game SHALL use the Game_Config values from the Game_Config source and discard all Tuning_Panel changes, so that tuning overrides are not persisted.
 9. WHILE the Tuning_Panel is visible, WHEN the Developer interacts with a Tuning_Panel control, THE Game SHALL NOT treat the Tuning_Panel interaction as a flap input.
 10. WHILE the Tuning_Panel is enabled, WHEN the Developer changes a value in the Tuning_Panel, THE Game SHALL use the changed Game_Config value in place of the corresponding default value from Requirements 3.4, 6.2, 6.4, 14.1, 14.2, 14.3, and 15.2 for the remainder of the current page session.
+
+### Requirement 18: Best Score Panel
+
+**User Story:** As a player, I want to open a best score view from the main menu, so that I can check my record before playing.
+
+#### Acceptance Criteria
+
+1. WHILE the Game_State is Main_Menu AND the Best_Score_Panel is closed, THE Game SHALL display a Play control and a High Scores control within the visible play area, with no overlap between the two controls' hit areas.
+2. WHILE the Game_State is Main_Menu AND the Best_Score_Panel is closed, WHEN the Player activates the High Scores control by mouse click or screen tap within its hit area, or presses the "H" key, THE Game SHALL open the Best_Score_Panel within 100 milliseconds of the input.
+3. WHILE the Best_Score_Panel is open, THE Game SHALL display a Back control and the current in-memory High_Score as a non-negative integer between 0 and 999,999,999 that equals the High_Score shown by the Score_Display.
+4. WHILE the Best_Score_Panel is open, WHEN the Player activates the Back control by mouse click or screen tap within its hit area, or presses the "Escape" or "H" key, THE Game SHALL close the Best_Score_Panel within 100 milliseconds of the input and keep the Game_State as Main_Menu.
+5. WHILE the Best_Score_Panel is open, IF the Player performs a mouse click or a screen tap outside the Back control's hit area, or presses the Spacebar or Enter key, THEN THE Game SHALL keep the Best_Score_Panel open, keep the Game_State as Main_Menu, and SHALL NOT start a game.
+6. WHILE the Game_State is Main_Menu, IF the Player activates the High Scores control, THEN THE Game SHALL NOT set the Game_State to Playing for that input and SHALL NOT apply a Flap to the Ghost for that input.
+7. WHILE the Game_State is Main_Menu AND the Best_Score_Panel is closed, WHEN the Player activates the Play control by mouse click or screen tap within its hit area, THE Game SHALL start a game as specified in Requirement 2.
+8. THE Game SHALL render every Main_Menu, Best_Score_Panel, Paused, and Game_Over control, including the on-screen pause control, with a displayed hit area of at least 44 by 44 pixels.
+9. WHEN the Game_State transitions to Main_Menu, whether on initial load or from Game_Over, THE Game SHALL set the Best_Score_Panel to closed.
+10. IF the Player holds down the "H" key or "Escape" key so that the browser generates repeated key events, THEN THE Game SHALL open or close the Best_Score_Panel at most once per physical key press and ignore the repeated key events.
+11. WHILE the Best_Score_Panel is open, WHEN the Best_Score_Panel is closed by any input in criterion 4, THE Game SHALL NOT start a game or apply a Flap for that same input.
+
+### Requirement 19: Ghost Sprite and Hitbox
+
+**User Story:** As a player, I want the ghost to look crisp and collide fairly, so that hits match what I see.
+
+#### Acceptance Criteria
+
+1. THE Game SHALL render the Ghost sprite in a 32 by 32 logical-canvas-pixel cell whose center is the Ghost position (x, y), so that the cell spans from x − 16 to x + 16 horizontally and from y − 16 to y + 16 vertically on the 480 by 640 logical canvas, with the cell's top-left corner drawn at whole-pixel logical coordinates (x − 16 and y − 16 rounded to the nearest integer).
+2. THE Game SHALL fit the Ghost image inside the 32 by 32 pixel cell by scaling the Ghost image uniformly by the factor min(32 ÷ image width, 32 ÷ image height), so that the scaled image's longer side equals 32 pixels, its shorter side is at most 32 pixels, the width-to-height ratio matches the source image within 1 pixel of rounding, and the scaled image is centred both horizontally and vertically within the cell.
+3. WHEN the Game finishes loading the Ghost image, THE Game SHALL prepare a scaled 32 by 32 pixel version of the Ghost image exactly once and reuse that scaled version for every rendered frame in every Game_State, with no per-frame rescaling of the source image.
+4. THE Game SHALL use a circular Hitbox, centred on the Ghost center, whose radius equals the Game_Config Hitbox radius (default 12 logical canvas pixels), and THE Game SHALL keep the Hitbox radius and center unchanged by Ghost_Animation, sprite rendering, or display scaling of the canvas.
+5. WHILE the Game_State is Playing, WHEN a frame update finishes moving the Ghost and Pipe_Pairs and the distance from the Ghost center to the closest point of any top or bottom pipe rectangle of any Pipe_Pair is strictly less than the Hitbox radius, THE Game SHALL treat the overlap as a pipe collision in that same frame update.
+6. WHILE the Game_State is Playing, WHEN a frame update finishes moving the Ghost and the Ghost center y plus the Hitbox radius is strictly greater than the Ground y position, or the Ghost center y minus the Hitbox radius is strictly less than the Ceiling y position, THE Game SHALL treat the overlap as a Ground or Ceiling collision respectively in that same frame update.
+7. IF the distance from the Ghost center to the closest point of a pipe rectangle equals the Hitbox radius exactly, or the Ghost center y plus the Hitbox radius equals the Ground y position exactly, or the Ghost center y minus the Hitbox radius equals the Ceiling y position exactly, THEN THE Game SHALL NOT treat the contact as a collision.
+8. THE Game_Config SHALL expose the Hitbox radius as a value in logical canvas pixels with an allowed range of 8 to 16 inclusive, and the value SHALL NOT exceed half the Ghost sprite size (16 pixels for the 32 pixel sprite).
+9. IF the Ghost image fails to load, or has not finished loading within 5 seconds of page open, THEN THE Game SHALL draw a filled white fallback shape contained entirely within the 32 by 32 pixel cell centred on the Ghost position, keep using the same Hitbox center and radius, and continue to the Main_Menu Game_State without displaying a blocking error.
+10. IF the Config_Validator finds at load that the Hitbox radius is missing, non-numeric, below 8, above 16, or above half the Ghost sprite size, THEN THE Game SHALL use the default Hitbox radius of 12 pixels and report the rejected value to the Developer through a non-blocking warning, while leaving the other valid Game_Config values unchanged.
+11. WHILE the Game_State is Main_Menu, Paused, or Game_Over, THE Game SHALL NOT evaluate or treat any Ghost overlap with a pipe, the Ground, or the Ceiling as a collision.
+
+### Requirement 20: Ghost Animation
+
+**User Story:** As a player, I want the ghost to animate when idle, flapping and crashing, so that the game feels alive.
+
+#### Acceptance Criteria
+
+1. WHILE the Game_State is Main_Menu, THE Game SHALL play the Idle Ghost_Animation as 4 looping frames of 150 milliseconds each (one full cycle every 600 milliseconds, each frame duration within ±17 milliseconds), where each frame holds a constant vertical visual offset between -2 and +2 pixels, at least two of the 4 frames use different offsets, and the Ghost sprite rotation is 0 degrees.
+2. WHEN a Flap is applied, including the first Flap applied on the transition to Playing (Requirement 2.3), THE Game SHALL start the Flap Ghost_Animation from its first frame on the same rendered frame the Flap is applied, playing 3 frames lasting 60, 60, and 80 milliseconds (squash, stretch, settle), for a total of 200 milliseconds, with each frame duration within ±17 milliseconds.
+3. WHEN a Flap is applied while the Flap Ghost_Animation is playing, THE Game SHALL restart the Flap Ghost_Animation from its first frame on the same rendered frame the Flap is applied, discarding the remaining time of the interrupted Flap Ghost_Animation.
+4. WHEN the Flap Ghost_Animation finishes its third frame, THE Game SHALL show the Glide Ghost_Animation on the next rendered frame and keep showing it until the next Flap is applied or the Game_State transitions to Game_Over.
+5. WHILE the Game_State is Playing, THE Game SHALL rotate the Ghost sprite linearly according to the Ghost vertical velocity, from -20 degrees at the Flap_Velocity (-450 pixels per second) to +45 degrees at the Terminal_Velocity (700 pixels per second), clamped to the range -20 to +45 degrees, with the rendered angle within ±0.5 degrees of the computed value on every rendered frame (for example, approximately +5.4 degrees at a vertical velocity of 0 pixels per second).
+6. WHEN the Game_State transitions to Game_Over, THE Game SHALL play the Death Ghost_Animation in place, starting on the same rendered frame as the transition, as a hit flash (80 milliseconds), then an eye change to crosses (120 milliseconds), then a horizontal shake with a visual offset of 1 to 2 pixels (two frames of 60 milliseconds each, in opposite horizontal directions), for a total of 320 milliseconds with each phase duration within ±17 milliseconds, and keep the Ghost sprite rotation fixed at the angle rendered on the last Playing frame.
+7. WHILE the Death Ghost_Animation plays, THE Game SHALL keep the Ghost vertical position unchanged, consistent with Requirement 8.5.
+8. WHILE the Game_State is Paused, THE Game SHALL freeze the current Ghost_Animation frame, the elapsed time within that frame, and the Ghost sprite rotation, and WHEN the Game_State returns to Playing, THE Game SHALL resume from the frozen frame with only the remaining time of that frame left to play.
+9. THE Game SHALL apply Ghost_Animation offsets, scaling, rotation, flash, and opacity to rendering only, so that the Ghost position, velocity, and Hitbox on every frame update are identical to the values they would have with the Ghost_Animation disabled.
+10. WHERE the user has enabled the reduced-motion preference in the browser or operating system, THE Game SHALL render the Idle offset as 0 pixels, render the Death shake as 0 pixels, and omit the hit flash, while keeping the eye change, the opacity change, and the 320-millisecond total duration and phase timings of the Death Ghost_Animation unchanged.
+11. THE Game SHALL NOT flash the Ghost more than 3 times in any 1-second period, where a flash is any rendered frame sequence in which the Ghost sprite brightness is raised above its normal rendering for the hit flash.
+12. WHEN the Death Ghost_Animation finishes its final shake frame, THE Game SHALL hold the final Death frame (crossed eyes, no shake offset, rotation fixed per criterion 6) at 0.7 opacity until the Game_State leaves Game_Over.
+13. WHEN the Game_State transitions to Main_Menu, THE Game SHALL set the Ghost_Animation to Idle starting from its first frame on the same rendered frame, with the Ghost sprite at 1.0 opacity, normal (non-crossed) eyes, 0 degrees rotation, and no hit flash or shake offset.
